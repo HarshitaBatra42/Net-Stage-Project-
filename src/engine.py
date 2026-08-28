@@ -30,7 +30,7 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/interactions"
 GEMINI_MODEL = "gemini-3-flash-preview"
 
-PROMPT_PATH = "../prompts/diagnose_prompt.md"
+PROMPT_PATH = os.path.join(os.path.dirname(__file__), "..", "prompts", "diagnose_prompt.md")
 CASES_PATH = "../data/cases.csv"
 
 
