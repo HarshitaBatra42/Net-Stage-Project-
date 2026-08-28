@@ -20,7 +20,7 @@ import pandas as pd
 from checker import run_checks
 from engine import diagnose_case, load_system_prompt
 
-CASES_PATH = "../data/cases.csv"
+CASES_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "cases.csv")
 LOG_PATH = "../docs/review_log.csv"
 
 st.set_page_config(page_title="NetSage AI — Review Dashboard", layout="wide")
