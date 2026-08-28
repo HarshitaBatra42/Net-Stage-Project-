@@ -1,0 +1,74 @@
+case_id,symptom,topology_note,show_outputs,expected_fault,osi_layer,concept_tag,severity
+NET-001,PC1 cannot reach Server1 in VLAN 30; gateway ping works,"PC1 in VLAN 10, Server1 in VLAN 30, router-on-a-stick","GigabitEthernet0/0.10 is up, line protocol is up
+GigabitEthernet0/0.30 is administratively down, line protocol is down",Sub-interface for VLAN 30 is administratively down,Layer 3,inter-vlan-routing,High
+NET-002,"PC2 gets no IP address, shows APIPA 169.254.x.x","PC2 connected to Switch1, DHCP server is Router1","ip dhcp pool VLAN20
+ network 192.168.20.0 255.255.255.0
+! (no default-router configured)",DHCP pool missing default-router statement,Layer 3,dhcp,High
+NET-003,"PC3 can ping gateway but not external website by name, IP ping works","PC3 in VLAN 10, DNS server 8.8.8.8 configured on router","ip dhcp pool VLAN10
+ dns-server 0.0.0.0
+ default-router 192.168.10.1",DNS server set to invalid address 0.0.0.0 in DHCP pool,Layer 7,dns,Medium
+NET-004,"Two hosts on same VLAN cannot reach each other, ARP fails",PC4 and PC5 both in VLAN 10,"PC4: 192.168.10.10 255.255.255.0
+PC5: 192.168.10.10 255.255.255.0",Duplicate IP address 192.168.10.10 assigned to two hosts,Layer 3,duplicate-ip,High
+NET-005,"Remote branch cannot reach HQ subnet, ping times out",Static route configured on Router2 toward HQ,ip route 192.168.100.0 255.255.255.255 10.0.0.1,Wrong subnet mask in static route (should be /24 not /32),Layer 3,static-routing,High
+NET-006,PC6 can reach gateway but nothing beyond it,PC6 gateway configured manually,"PC6 IP config: 192.168.10.15/24, gateway 192.168.20.1",Gateway mismatch — gateway IP is in a different subnet than the host,Layer 3,gateway-mismatch,High
+NET-007,Trunk link between switches not passing VLAN traffic,Switch1 and Switch2 connected via trunk,"interface GigabitEthernet0/1
+ switchport mode access
+ switchport access vlan 10",Trunk port configured as access port instead of trunk,Layer 2,trunking,High
+NET-008,"New VLAN 40 hosts cannot reach anything, even each other",VLAN 40 created on switch but not on router sub-interface,"show vlan brief
+40 VLAN0040 active Gi0/2",Missing router sub-interface / SVI for VLAN 40,Layer 3,missing-vlan-interface,High
+NET-009,Internal server unreachable from outside network despite NAT config,Router configured with static NAT for web server,"ip nat inside source static 192.168.1.10 203.0.113.5
+! interface Gi0/0 missing 'ip nat outside'",Outside interface missing 'ip nat outside' command,Layer 3,nat,High
+NET-010,Host can ping internal servers but not internet,PAT (overload) configured for internet access,"ip nat inside source list 1 interface Gi0/0
+! access-list 1 not defined",Missing overload — referenced access-list 1 does not exist,Layer 3,nat,Medium
+NET-011,Admin PC blocked from Telnet to router despite correct credentials,ACL applied to VTY lines,"access-list 10 deny 192.168.10.20
+line vty 0 4
+ access-class 10 in",ACL explicitly denies the admin PC's IP on VTY access-class,Layer 4,acl,Medium
+NET-012,Guest Wi-Fi users can reach internal file server,Guest VLAN should be isolated from internal VLAN,"access-list 101 permit ip any any
+! no deny rule for guest-to-internal traffic",ACL missing deny rule for guest VLAN reaching internal VLAN (isolation failure),Layer 3,acl,Critical
+NET-013,OSPF neighbors not forming between Router1 and Router2,Both routers configured for OSPF area 0,"Router1: network 10.0.0.0 0.0.0.255 area 0
+Router2: network 10.0.0.0 0.0.0.255 area 1",Area ID mismatch between OSPF neighbors (area 0 vs area 1),Layer 3,ospf,High
+NET-014,Wireless clients connect but get no internet,WLC configured with DHCP relay to Router1,"interface Vlan50
+ ip helper-address 192.168.99.99",ip helper-address points to wrong/non-existent DHCP server IP,Layer 3,wireless-dhcp,High
+NET-015,Wireless SSID visible but clients cannot authenticate,WPA2-PSK configured on access point,"AP config: authentication key-management wpa version 2
+! passphrase not set",WPA2 passphrase/PSK not configured on the access point,Layer 2,wireless-auth,Medium
+NET-016,Router reload lost all interface configs,Configs were made in running-config only,"show run | include boot
+! no 'copy run start' history found",Running-config was never saved to startup-config before reload,N/A,config-management,Medium
+NET-017,"PC17 cannot get IP, DHCP requests time out","DHCP server on separate VLAN from client, no relay configured","interface Vlan10
+ ip address 192.168.10.1 255.255.255.0
+! no ip helper-address",Missing ip helper-address on client VLAN interface to reach remote DHCP server,Layer 3,dhcp,High
+NET-018,Static route to branch office not appearing in routing table,Static route configured but next hop unreachable,"ip route 172.16.0.0 255.255.0.0 10.0.0.99
+! 10.0.0.99 not directly connected",Next-hop IP for static route is not reachable/directly connected,Layer 3,static-routing,High
+NET-019,Switch port keeps going into err-disabled state,Port-security configured with max 1 MAC address,"interface Fa0/5
+ switchport port-security maximum 1
+ switchport port-security violation shutdown
+%PORT_SECURITY-2-PSECURE_VIOLATION",Port-security violation — more than 1 MAC address seen on the port,Layer 2,port-security,Medium
+NET-020,"VLAN 30 hosts intermittently lose connectivity, STP topology changes logged",Redundant switch links without STP tuning,"%SPANTREE-2-ROOTGUARD_BLOCK
+show spanning-tree vlan 30
+! frequent topology change notifications",Spanning-tree instability / possible switching loop causing topology changes,Layer 2,stp,Critical
+NET-021,PC21 has correct IP/gateway but cannot resolve internal hostnames,Internal DNS server configured on Router1,"ip dhcp pool VLAN10
+ dns-server 192.168.50.5
+! 192.168.50.5 is not the actual DNS server IP (should be 192.168.10.5)",Wrong DNS server IP configured in DHCP pool,Layer 7,dns,Medium
+NET-022,Inter-VLAN routing works for VLAN 10-20 but not VLAN 10-30,Router-on-a-stick with three sub-interfaces,"interface Gi0/0.30
+ encapsulation dot1Q 30
+ ip address 192.168.30.1 255.255.255.0
+! missing 'no shutdown' history on physical Gi0/0","Physical parent interface Gi0/0 administratively down, disabling all sub-interfaces",Layer 1,inter-vlan-routing,High
+NET-023,Site-to-site VPN tunnel not establishing between two routers,IPSec VPN configured with pre-shared keys,"Router1: crypto isakmp key CISCO123 address 203.0.113.2
+Router2: crypto isakmp key CISCO321 address 203.0.113.1",Pre-shared key mismatch between VPN peers,Layer 3,vpn,High
+NET-024,"EtherChannel between two switches not bundling, ports show independent",Port-channel configured with mismatched modes,"Switch1: channel-group 1 mode active
+Switch2: channel-group 1 mode on",EtherChannel negotiation mode mismatch (LACP active vs static on),Layer 2,etherchannel,Medium
+NET-025,Host in VLAN 10 can ping 192.168.10.1 but not 192.168.10.254 (both claim to be gateway),HSRP configured between two routers for redundancy,"Router1: standby 1 ip 192.168.10.1
+Router2: standby 1 ip 192.168.10.254",HSRP virtual IP mismatch between the two routers in the same group,Layer 3,hsrp,High
+NET-026,PC26 shows 'destination host unreachable' when pinging server on same subnet,"PC26 and server on VLAN 10, connected via same switch","PC26: 192.168.10.20 255.255.255.0
+Switch: interface Fa0/6 is down, line protocol is down",Physical switch interface for PC26 is down (cable/port issue),Layer 1,interface-down,High
+NET-027,ACL blocks legitimate HTTP traffic to web server after recent change,Extended ACL applied inbound on Gi0/0,"access-list 105 deny tcp any any eq 80
+access-list 105 permit ip any any",Deny rule for port 80 placed before the general permit — order of ACL entries matters,Layer 4,acl,High
+NET-028,Router does not forward traffic between two directly connected subnets,"Router has two interfaces, ip routing appears disabled","show run | include ip routing
+! no ip routing (line absent)",Global 'ip routing' command not enabled on the router,Layer 3,routing-disabled,Critical
+NET-029,"PC29 cannot reach any device, even same-subnet gateway",Recently reconfigured with a new subnet mask,"PC29: IP 192.168.10.50, mask 255.255.255.192, gateway 192.168.10.1","Subnet mask too restrictive, gateway falls outside PC29's calculated subnet range",Layer 3,subnetting,High
+NET-030,"Voice VLAN phones register but have poor call quality, no QoS applied",Voice VLAN configured on access ports but no QoS policy,"interface Fa0/10
+ switchport voice vlan 50
+! no service-policy configured",No QoS/traffic prioritization policy applied for voice VLAN traffic,Layer 2,qos-voice,Medium
+NET-031,Newly added host in VLAN 20 gets IP but cannot reach VLAN 20 server 2 hops away,Multi-router topology with EIGRP,"Router2: show ip eigrp neighbors
+! neighbor table empty, no adjacency formed",EIGRP autonomous system number mismatch preventing neighbor adjacency,Layer 3,eigrp,High
+NET-032,Backup default route not taking over when primary ISP link fails,"Two static default routes configured, one should be floating backup","ip route 0.0.0.0 0.0.0.0 10.0.0.1
+ip route 0.0.0.0 0.0.0.0 10.0.1.1","Backup route missing administrative distance value, so it competes with primary instead of floating",Layer 3,floating-static-route,High
